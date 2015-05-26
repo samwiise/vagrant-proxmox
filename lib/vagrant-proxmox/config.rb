@@ -26,6 +26,11 @@ module VagrantPlugins
 			#
 			# @return [Symbol]
 			attr_accessor :vm_type
+			
+			# The virtual machine type, e.g. :openvz or :qemu
+			#
+			# @return [Integer]
+			attr_accessor :clone_vm_id
 
 			# The openvz os template to use for the virtual machine
 			#
@@ -131,6 +136,7 @@ module VagrantPlugins
 				@user_name = UNSET_VALUE
 				@password = UNSET_VALUE
 				@vm_type = UNSET_VALUE
+				@clone_vm_id = UNSET_VALUE
 				@openvz_os_template = UNSET_VALUE
 				@openvz_template_file = UNSET_VALUE
 				@vm_id_range = 900..999
@@ -159,6 +165,7 @@ module VagrantPlugins
 				@user_name = nil if @user_name == UNSET_VALUE
 				@password = nil if @password == UNSET_VALUE
 				@vm_type = nil if @vm_type == UNSET_VALUE
+				@clone_vm_id = nil if @clone_vm_id == UNSET_VALUE
 				@openvz_template_file = nil if @openvz_template_file == UNSET_VALUE
 				@openvz_os_template = "local:vztmpl/#{File.basename @openvz_template_file}" if @openvz_template_file
 				@openvz_os_template = nil if @openvz_os_template == UNSET_VALUE

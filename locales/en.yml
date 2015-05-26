@@ -3,6 +3,7 @@ en:
     already_running: 'The virtual machine is already up and running'
     already_stopped: "The virtual machine is already stopped"
     creating_vm: 'Creating the virtual machine...'
+    cloning_vm: 'Cloning the virtual machine (clone_vmid=%{clone_vmid}, new_vmid=%{new_vmid})...'
     destroying_vm: 'Destroying the virtual machine...'
     done: "Done!"
     errors:

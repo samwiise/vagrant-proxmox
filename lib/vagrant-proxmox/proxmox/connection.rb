@@ -99,6 +99,16 @@ module VagrantPlugins
 				response = post "/nodes/#{node}/#{vm_type}", params
 				wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.create_vm_timeout'
 			end
+			
+			def clone_vm node: required('node'), vm_type: required('node'), clone_vm_id: required('node'), params: required('params')
+				response = post "/nodes/#{node}/#{vm_type}/#{clone_vm_id}/clone", params
+				wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.clone_vm_timeout'
+			end
+			
+			def update_config_vm node: required('node'), vm_type: required('node'), vm_id: required('node'), params: required('params')
+        response = post "/nodes/#{node}/#{vm_type}/#{vm_id}/config", params
+        wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.config_vm_timeout'
+      end
 
 			def start_vm vm_id
 				vm_info = get_vm_info vm_id
@@ -122,7 +132,7 @@ module VagrantPlugins
 				response = get "/cluster/resources?type=vm"
 				allowed_vm_ids = vm_id_range.to_set
 				used_vm_ids = response[:data].map { |vm| vm[:vmid] }
-				free_vm_ids = (allowed_vm_ids - used_vm_ids).sort
+				free_vm_ids = (allowed_vm_ids - used_vm_ids).sort 
 				free_vm_ids.empty? ? raise(VagrantPlugins::Proxmox::Errors::NoVmIdAvailable) : free_vm_ids.first
 			end
 

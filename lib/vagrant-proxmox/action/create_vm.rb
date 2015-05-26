@@ -5,7 +5,7 @@ module VagrantPlugins
 			# This action creates a new virtual machine on the Proxmox server and
 			# stores its node and vm_id env[:machine].id
 			class CreateVm < ProxmoxAction
-
+        @@my_mutex = Mutex.new
 				def initialize app, env
 					@app = app
 					@logger = Log4r::Logger.new 'vagrant_proxmox::action::create_vm'
@@ -17,13 +17,24 @@ module VagrantPlugins
 
 					node = env[:proxmox_selected_node]
 					vm_id = nil
-
+          
 					begin
-						vm_id = connection(env).get_free_vm_id
-						params = create_params_openvz(config, env, vm_id) if config.vm_type == :openvz
-						params = create_params_qemu(config, env, vm_id) if config.vm_type == :qemu
-						exit_status = connection(env).create_vm node: node, vm_type: config.vm_type, params: params
-						exit_status == 'OK' ? exit_status : raise(VagrantPlugins::Proxmox::Errors::ProxmoxTaskFailed, proxmox_exit_status: exit_status)
+					  @@my_mutex.synchronize do
+  					  #env[:ui].info I18n.t('vagrant_proxmox.errors.communication_error', error_msg: 'helllllooo') 
+  						vm_id = connection(env).get_free_vm_id
+  						params = create_params_openvz(config, env, vm_id) if config.vm_type == :openvz
+  						params = create_params_qemu(config, env, vm_id) if config.vm_type == :qemu
+  						params = create_params_qemu_clone(config, env, vm_id) if config.vm_type == :qemu_clone
+  						if config.vm_type == :qemu_clone
+  						  env[:ui].info I18n.t('vagrant_proxmox.cloning_vm', clone_vmid: config.clone_vm_id, new_vmid: vm_id)
+  							exit_status = connection(env).clone_vm node: node, vm_type: 'qemu', clone_vm_id: config.clone_vm_id, params: params
+  							params = create_params_qemu_config(config, env, vm_id)
+  							exit_status = connection(env).update_config_vm node: node, vm_type: 'qemu', vm_id: vm_id, params: params
+  						else
+  							exit_status = connection(env).create_vm node: node, vm_type: config.vm_type, params: params
+  						end
+  						exit_status == 'OK' ? exit_status : raise(VagrantPlugins::Proxmox::Errors::ProxmoxTaskFailed, proxmox_exit_status: exit_status)
+  					end
 					rescue StandardError => e
 						raise VagrantPlugins::Proxmox::Errors::VMCreateError, proxmox_exit_status: e.message
 					end
@@ -49,6 +60,21 @@ module VagrantPlugins
 					 net0: network,
 					 description: "#{config.vm_name_prefix}#{env[:machine].name}"}
 				end
+				
+				private
+				def create_params_qemu_clone(config, env, vm_id)
+					{newid: vm_id,
+					 name: env[:machine].config.vm.hostname || env[:machine].name.to_s,
+					 description: "#{config.vm_name_prefix}#{env[:machine].name}"}
+				end
+				def create_params_qemu_config(config, env, vm_id)
+          network = 'e1000,bridge=vmbr0'
+          network = "e1000=#{get_machine_macaddress(env)},bridge=vmbr0" if get_machine_macaddress(env)
+          {net0: network}
+           .tap do |params|
+            params[:memory] = config.vm_memory if config.vm_memory
+          end
+        end
 
 				private
 				def create_params_openvz(config, env, vm_id)
