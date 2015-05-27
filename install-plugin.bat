@@ -1,0 +1,1 @@
+vagrant plugin install vagrant-proxmox-0.0.8.gem
