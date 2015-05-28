@@ -68,11 +68,14 @@ module VagrantPlugins
 					 description: "#{config.vm_name_prefix}#{env[:machine].name}"}
 				end
 				def create_params_qemu_config(config, env, vm_id)
-          network = 'e1000,bridge=vmbr0'
-          network = "e1000=#{get_machine_macaddress(env)},bridge=vmbr0" if get_machine_macaddress(env)
+          network = "#{config.qemu_nic_model},bridge=#{config.qemu_bridge}"
+          network = "#{config.qemu_nic_model}=#{get_machine_macaddress(env)},bridge=#{config.qemu_bridge}" if get_machine_macaddress(env)
           {net0: network}
            .tap do |params|
             params[:memory] = config.vm_memory if config.vm_memory
+            params[:sockets] = config.qemu_sockets if config.qemu_sockets
+            params[:cores] = config.qemu_cores if config.qemu_cores
+            params[:ostype] = config.qemu_os if config.qemu_os
           end
         end
 
